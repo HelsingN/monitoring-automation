@@ -124,5 +124,3 @@ prometheus + grafana + alertmanager + sentry
 - Helm  
 
 ---
-
-All stages are now presented in a unified and consistent format. Let me know if you need further adjustments!
