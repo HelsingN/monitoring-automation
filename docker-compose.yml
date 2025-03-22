@@ -1,0 +1,93 @@
+
+services:
+  prometheus:
+    image: prom/prometheus:latest  # Используем официальный образ Prometheus
+    container_name: prometheus  # Имя контейнера
+    restart: unless-stopped # Автоматический рестарт контейнера при сбоях
+    volumes:
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml  # Подключаем конфигурацию Prometheus
+      - ./configs/alert_rules.yml:/etc/prometheus/alert_rules.yml  # Подключаем alert_rules.yml в Prometheus!
+    ports:
+      - "9090:9090"  # Открываем порт 9090 для доступа к веб-интерфейсу Prometheus
+
+  grafana:
+    image: grafana/grafana:latest  # Используем официальный образ Grafana
+    container_name: grafana  # Имя контейнера
+    restart: unless-stopped # Автоматический рестарт контейнера при сбоях
+    ports:
+      - "3000:3000"  # Открываем порт 3000 для веб-интерфейса Grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin  # Устанавливаем пароль администратора
+    volumes:
+      - grafana_data:/var/lib/grafana  # Создаем постоянное хранилище для данных Grafana
+
+  alertmanager:
+    image: prom/alertmanager  # Используем официальный образ Alertmanager
+    container_name: alertmanager  # Имя контейнера
+    restart: unless-stopped  # Автоматический рестарт контейнера при сбоях
+    volumes:
+      - ./configs/alertmanager.yml:/etc/alertmanager/alertmanager.yml  # Подключаем конфигурацию Alertmanager
+    ports:
+      - "9093:9093"  # Открываем порт 9093 для веб-интерфейса Alertmanager
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:latest
+    container_name: blackbox-exporter
+    restart: unless-stopped
+    ports:
+      - "9115:9115"
+    command:
+      - "--config.file=/etc/blackbox_exporter/config.yml"
+    volumes:
+      - ./configs/blackbox.yml:/etc/blackbox_exporter/config.yml
+
+
+  sentry:
+    image: sentry:latest
+    container_name: sentry
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      SENTRY_SECRET_KEY: "supersecretkey"
+      SENTRY_POSTGRES_HOST: "sentry-db"
+      SENTRY_POSTGRES_PORT: "5432"
+      SENTRY_DB_NAME: "sentry"
+      SENTRY_DB_USER: "sentry"
+      SENTRY_DB_PASSWORD: "sentrypassword"
+      SENTRY_REDIS_HOST: "sentry-redis"
+      SENTRY_REDIS_PORT: "6379"
+    depends_on:
+      - sentry-db
+      - sentry-redis
+
+  sentry-db:
+    image: postgres:latest
+    container_name: sentry-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "sentry"
+      POSTGRES_USER: "sentry"
+      POSTGRES_PASSWORD: "sentrypassword"
+    volumes:
+      - sentry_db_data:/var/lib/postgresql/data
+
+  sentry-redis:
+    image: redis:latest
+    container_name: sentry-redis
+    restart: unless-stopped
+
+volumes:
+  grafana_data:  # Определяем том (persistent volume) для хранения данных Grafana
+  sentry_db_data:

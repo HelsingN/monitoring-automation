@@ -1,0 +1,35 @@
+global:
+  resolve_timeout: 5m  # Через сколько минут считать проблему решенной после восстановления системы
+
+route:
+  group_by: ['alertname', 'instance', 'job']
+  receiver: 'telegram'  # Все алерты будут отправляться в Telegram
+  group_wait: 10s  # Ждать 10 секунд перед отправкой первого алерта
+  group_interval: 5m  # Повторять алерты не чаще, чем раз в 5 минут
+  repeat_interval: 4h  # Если проблема не решена, повторять алерт каждый час
+
+receivers:
+  - name: 'telegram'
+    telegram_configs:
+      - api_url: "https://api.telegram.org"
+        bot_token: "${TELEGRAM_BOT_TOKEN}"  # Токен Telegram-бота
+        chat_id: $CHAT_ID  # ID чата, куда отправлять уведомления
+        message: |
+          {{ if eq .Status "firing" }}
+          <b>🔥 ALERT! 🔥</b>
+          🔴 Alert: {{ .CommonAnnotations.summary }} 
+          📌 Description: {{ .CommonAnnotations.description }}
+          🔗 URL: {{ .CommonLabels.instance }}
+          ⚠️ Status: <i>FIRING</i>
+          {{ else if eq .Status "resolved" }}
+          <b>✅ RESOLVED! ✅</b>
+          🟢 Alert: {{ .CommonAnnotations.summary }}
+          🎉 Problem resolved!
+          🔗 URL: {{ .CommonLabels.instance }}
+          ✅ Status: <i>RESOLVED</i>
+          {{ end }}
+        send_resolved: true
+        parse_mode: "HTML"
+
+# 📅 <b>Time:</b> {{.StartsAt | toDate}}
+# message: "🔥 *ALERT!* 🔥\n\n📌 *{{ .CommonAnnotations.summary }}*\n📅 Time: {{ .StartsAt }}\n⚠️ Status: {{ .Status }}"
