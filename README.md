@@ -13,7 +13,7 @@ prometheus + grafana + alertmanager + sentry
 #### ✅ Tasks:
 
 1. Identify the servers to be monitored (cloud/physical).  
-2. Choose the deployment location for the monitoring system (e.g., physical server in Russia).  
+2. Choose the deployment location for the monitoring system.  
 3. *Define key metrics:* CPU usage, RAM usage, Disk space, Network traffic, Service errors  
 4. Verify SSH access, credentials, and network settings.  
 
